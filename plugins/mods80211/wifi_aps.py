@@ -49,6 +49,8 @@ class Snarf():
         table2 = Table('wifi_AP_ssids', MetaData(),
                       Column('mac', String(64), primary_key=True), #Len 64 for sha256
                       Column('ssid', String(100), primary_key=True, autoincrement=False),
+                      Column('channel', Integer),
+                      Column('rssi', Integer),
                       Column('sunc', Integer, default=0))
 
         return [table, table2]
@@ -57,6 +59,8 @@ class Snarf():
         if p.haslayer(Dot11Beacon) and p[Dot11Elt].info != '' and re.match("[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]", p.addr2):
             mac = re.sub(':', '', p.addr2)
             timeStamp = datetime.datetime.fromtimestamp(int(p.time))
+            channel = int( ord(p[Dot11Elt:3].info))
+            rssi = p.dBm_AntSignal
             vendor = self.mv.lookup(mac[:6])
             if self.hash_macs == "True":
                 mac = snoop_hash(mac)
@@ -71,15 +75,15 @@ class Snarf():
                 logging.error(p.summary())
 
             self.prox.pulse(mac,timeStamp)
-            self.ap_names.add((mac,ssid))
+            self.ap_names.add((mac,ssid,channel,rssi))
             self.device_vendor.add((mac,vendor))
 
     def get_data(self):
         proxSess = self.prox.getProxs()
         ap_names_rtn = []
-        for mac_ssid in self.ap_names.getNew():
-            mac,ssid = mac_ssid
-            ap_names_rtn.append({"mac": mac, "ssid": ssid})
+        for mac_ssid_channel_rssi in self.ap_names.getNew():
+            mac,ssid,channel,rssi = mac_ssid_channel_rssi
+            ap_names_rtn.append({"mac": mac, "ssid": ssid,"channel": channel,"rssi": rssi})
 
         vendors = []
         for mac_vendor in self.device_vendor.getNew():
