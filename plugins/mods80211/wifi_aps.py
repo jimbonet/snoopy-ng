@@ -14,6 +14,7 @@ from includes.prox import prox
 from includes.fifoDict import fifoDict
 import datetime
 from includes.mac_vendor import mac_vendor
+from includes import scapy_ex
 
 #N.B If you change b64mode to False, you should probably change
 # the ssid colum to type Unicode.
